@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
+use App\Models\Video;
+
 class VideoController extends Controller
 {
     /**
@@ -19,7 +21,7 @@ class VideoController extends Controller
      */
     public function create()
     {
-        return 'teste';
+        return view('videos.create');
     }
 
     /**
@@ -27,7 +29,15 @@ class VideoController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        if (!$request->hasFile('file')) $response = ['success' => false, 'status' => 406, 'message' => 'O campo "Arquivo de Vídeo" é obrigatório!'];
+        //else if (
+        
+        if ($request->ajax()) return response()->json($response)->status((isset($response['status'])) ? $response['status'] : 200);
+        else 
+        {
+            if ($response['success']) return redirect()->back();
+            else return redirect()->back()->withInput();
+        }
     }
 
     /**
