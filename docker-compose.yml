@@ -1,5 +1,5 @@
 services:
-    laravel.4yousee_challenge:
+    application:
         build:
             context: ./vendor/laravel/sail/runtimes/8.4
             dockerfile: Dockerfile
@@ -27,7 +27,7 @@ services:
     mysql:
         image: 'mysql/mysql-server:8.0'
         ports:
-            - '${FORWARD_DB_PORT:-3306}:3306'
+            - '${FORWARD_DB_PORT:-3306}:${DB_PORT:-3306}'
         environment:
             MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
             MYSQL_ROOT_HOST: '%'
