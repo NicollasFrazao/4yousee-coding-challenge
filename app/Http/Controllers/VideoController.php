@@ -75,8 +75,8 @@ class VideoController extends Controller
         if ($request->ajax()) return response()->json($response)->setStatusCode((isset($response['status'])) ? $response['status'] : 200);
         else 
         {
-            if ($response['success']) return redirect()->back();
-            else return redirect()->back()->withInput();
+            if ($response['success']) return redirect()->back()->with($response);
+            else return redirect()->back()->withInput()->with($response);
         }
     }
 
