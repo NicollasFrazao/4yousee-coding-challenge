@@ -42,6 +42,7 @@
                     contentType: false, 
                     beforeSend: function () {},
                     success: function (response) {
+                        $('form#videos_store')[0].reset()
                         alert(response.message);
                     },
                     error: function (error) {

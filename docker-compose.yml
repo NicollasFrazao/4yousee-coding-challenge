@@ -1,7 +1,6 @@
 services:
     application:
         build:
-            #context: ./vendor/laravel/sail/runtimes/8.4
             context: ./docker
             dockerfile: Dockerfile
             args:
@@ -29,7 +28,7 @@ services:
     mysql:
         image: 'mysql/mysql-server:8.0'
         ports:
-            - '${FORWARD_DB_PORT:-3306}:${DB_PORT:-3306}'
+            - '${FORWARD_DB_PORT:-33066}:${DB_PORT:-3306}'
         environment:
             MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
             MYSQL_ROOT_HOST: '%'
