@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
 
             $table->uuid('uuid');
-            $table->string('name');
-            $table->string('resolution');
-            $table->time('duration');
+            $table->string('name')->nullable();
+            $table->string('resolution')->nullable();
+            $table->time('duration')->nullable();
             $table->string('url')->nullable();
 
             $table->timestamps();
