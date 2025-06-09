@@ -61,7 +61,7 @@ class VideoController extends Controller
             $response = [
                 'success' => true,
                 'status' => 200,
-                'message' => 'Tudo certo! Agora estamos armazenando seu upload.',
+                'message' => 'Tudo certo! Agora estamos armazenando seu upload e iremos notificar quando estiver tudo em ordem.',
             ];
         }
         catch (\Exception $exception)
