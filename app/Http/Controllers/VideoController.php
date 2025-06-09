@@ -55,6 +55,8 @@ class VideoController extends Controller
                 'duration' => $this->videoManagerService->getDuration(),
                 'resolution' => $this->videoManagerService->getResolution(),
             ]);
+
+            if ($this->videoManagerService->store($video)) $video->refresh();
             
             $response = [
                 'success' => true,

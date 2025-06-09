@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Services\Contracts\VideoManagerServiceInterface;
+use App\Services\Contracts\VideoStorageServiceInterface;
 
 use FFMpeg\FFProbe;
 
@@ -12,13 +13,16 @@ use App\Models\Video;
 
 class FFMpegService implements VideoManagerServiceInterface
 {
+    protected $videoStorageService;
+
     private UploadedFile $uploaded_file;
 
     /**
      * Create a new class instance.
      */
-    public function __construct()
+    public function __construct(VideoStorageServiceInterface $videoStorageService)
     {
+        $this->videoStorageService = $videoStorageService;
     }
 
     private function validateUploadedFile() : bool
@@ -60,5 +64,10 @@ class FFMpegService implements VideoManagerServiceInterface
         $video_resolution = $video_stream->get('width').'x'.$video_stream->get('height');
 
         return $video_resolution;
+    }
+
+    public function store(Video $video) : bool
+    {
+        return $this->videoStorageService->store($this->uploaded_file, $video);
     }
 }
