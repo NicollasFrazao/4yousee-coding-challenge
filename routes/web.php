@@ -11,4 +11,5 @@ Route::prefix('videos')
     ->controller(\App\Http\Controllers\VideoController::class)
     ->group(function () {
         Route::get('/create', 'create')->name('videos.create');
+        Route::post('/', 'store');
     });
