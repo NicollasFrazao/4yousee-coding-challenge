@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('resolution');
             $table->time('duration');
-            $table->string('url');
+            $table->string('url')->nullable();
 
             $table->timestamps();
         });

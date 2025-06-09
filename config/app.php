@@ -135,6 +135,9 @@ return [
     */
 
     'aliases' => [
-        'FFMpeg' => ProtoneMedia\LaravelFFMpeg\Support\FFMpeg::class
+        'FFMpeg' => FFMpeg\FFMpeg::class,
+        'FFProbe' => FFMpeg\FFProbe::class,
+        'Carbon' => Carbon\Carbon::class,
+        'DB' => Illuminate\Support\Facades\DB::class,
     ],
 ];

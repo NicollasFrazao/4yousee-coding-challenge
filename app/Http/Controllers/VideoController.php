@@ -4,10 +4,19 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
+use App\Services\Contracts\VideoManagerServiceInterface;
+
 use App\Models\Video;
 
 class VideoController extends Controller
 {
+    protected $videoManagerService;
+
+    public function __construct(VideoManagerServiceInterface $videoManagerService)
+    {
+        $this->videoManagerService = $videoManagerService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -29,10 +38,39 @@ class VideoController extends Controller
      */
     public function store(Request $request)
     {
-        if (!$request->hasFile('file')) $response = ['success' => false, 'status' => 406, 'message' => 'O campo "Arquivo de Vídeo" é obrigatório!'];
-        //else if (
+        $response = [
+            'success' => false, 
+            'status' => 406,
+        ];
+
+        \DB::beginTransaction();
+
+        try
+        {
+            $this->videoManagerService->setUploadedFile($request->file('video'));
+            
+            $video = Video::create([
+                'uuid' => uniqid(),
+                'name' => $this->videoManagerService->getOriginalName(),
+                'duration' => $this->videoManagerService->getDuration(),
+                'resolution' => $this->videoManagerService->getResolution(),
+            ]);
+            
+            $response = [
+                'success' => true,
+                'status' => 200,
+                'message' => 'Tudo certo! Agora estamos armazenando seu upload.',
+            ];
+        }
+        catch (\Exception $exception)
+        {
+            $response['message'] = $exception->getMessage();
+        }
+
+        if ($response['success']) \DB::commit();
+        else \DB::rollback();  
         
-        if ($request->ajax()) return response()->json($response)->status((isset($response['status'])) ? $response['status'] : 200);
+        if ($request->ajax()) return response()->json($response)->setStatusCode((isset($response['status'])) ? $response['status'] : 200);
         else 
         {
             if ($response['success']) return redirect()->back();

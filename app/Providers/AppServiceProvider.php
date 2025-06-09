@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
+use App\Services\FFMpegService;
+use App\Services\Contracts\VideoManagerServiceInterface;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -11,7 +14,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(VideoManagerServiceInterface::class, FFMpegService::class);
     }
 
     /**
