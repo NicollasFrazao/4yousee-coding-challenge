@@ -2,7 +2,7 @@
 
 namespace App\Observers;
 
-use Illuminate\Support\Facades\Redis;
+use App\Jobs\PublishMessageJob;
 
 use App\Models\Video;
 
@@ -21,7 +21,7 @@ class VideoObserver
      */
     public function updated(Video $video): void
     {
-        if ($video->wasChanged('url') && $video->url) Redis::publish('videos.store', json_encode($video->toArray()));
+        if ($video->wasChanged('url') && $video->url) PublishMessageJob::dispatch($video);
     }
 
     /**
