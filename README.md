@@ -4,7 +4,7 @@ A Laravel 12 application that receives a video upload, extracts its metadata wit
 
 ## Context
 
-Solution to the hiring challenge of 4YouSee (2025). The statement given by the company is kept in [`challenge.md`](challenge.md) (in Portuguese). The original setup guide, in Portuguese, is in [`README.pt-BR.md`](README.pt-BR.md).
+Solution to the hiring challenge of 4YouSee (2025). The statement given by the company is kept in [`challenge.md`](challenge.md) (in Portuguese).
 
 ## What it does
 
@@ -30,7 +30,28 @@ Solution to the hiring challenge of 4YouSee (2025). The statement given by the c
 
 ## Running locally
 
-Requirements: Docker with Compose, PHP 8.2+ and Composer on the host (to install `vendor/`, which the compose file uses), and `make`.
+### Prerequisites
+
+- **Windows:** install WSL2 with Ubuntu 20.04 ([guide](https://learn.microsoft.com/windows/wsl/install)) and [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/), then run everything below from the Ubuntu terminal.
+- **Linux or WSL2:** you need PHP 8.2+ and Composer on the host (to install `vendor/`, which the compose file uses), Docker with Compose, and `make`. On Ubuntu:
+
+```bash
+# PHP and the extensions the project uses
+sudo apt install -y software-properties-common
+sudo add-apt-repository ppa:ondrej/php
+sudo apt update
+sudo apt install -y php php-xml php-curl php-gd php-sqlite3 php-mbstring php-pgsql php-mysql php-cli unzip make
+
+# Composer (verified installer)
+curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
+HASH=$(curl -sS https://composer.github.io/installer.sig)
+php -r "if (hash_file('SHA384', '/tmp/composer-setup.php') === '$HASH') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('/tmp/composer-setup.php'); } echo PHP_EOL;"
+sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+```
+
+Docker Engine with the Compose plugin: see the [official instructions for Ubuntu](https://docs.docker.com/engine/install/ubuntu/).
+
+### Setup
 
 ```bash
 composer install
@@ -49,7 +70,7 @@ php artisan migrate
 
 Before the first upload, create a bucket named `4yousee` in the MinIO console (http://localhost:8900, user `sail`, password from `.env`); nothing in the repository creates it.
 
-The upload page is at http://localhost and the API at http://localhost/api/videos:
+The project can be used through the web page (http://localhost) or the API (http://localhost/api/videos):
 
 ```bash
 curl -H "X-Requested-With: XMLHttpRequest" -F "video=@public/examples/example.mp4" http://localhost/api/videos
