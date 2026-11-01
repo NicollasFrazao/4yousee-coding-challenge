@@ -1,126 +1,98 @@
-# Teste Técnico PHP: Processador de Vídeos
+# Video Upload Processor
 
-## Requisitos
+A Laravel 12 application that receives a video upload, extracts its metadata with FFmpeg, stores the file in S3-compatible storage and publishes a message on Redis.
 
-1.  **Sistema Operacional**
-    *   Caso opte por utilizar o `Windows`, será necessário instalar os seguintes recursos previamente:
-        *   `WSL2` (com `Ubuntu-20.04`), para mais informações acesse https://learn.microsoft.com/pt-br/windows/wsl/install;
-        *   `Docker Desktop`, para mais informações acesse https://docs.docker.com/desktop/setup/install/windows-install/.
-    *   Caso opte por utilizar `Linux` ou `WSL2`, abrir o terminal do `Ubuntu`.
+## Context
 
-2.  **Instalação**
-    *   Com o terminal aberto, `clone` o repositório para o diretório de sua preferência, com o comando abaixo:
-        ```
-        git clone https://github.com/NicollasFrazao/4yousee_challenge.git
-        ```
-    *   Instale o `PHP` através dos seguintes comandos:
-        ```
-        sudo apt install software-properties-common
-        ```
+Solution to the hiring challenge of 4YouSee (2025). The statement given by the company is kept in [`challenge.md`](challenge.md) (in Portuguese).
 
-        ```
-        sudo add-apt-repository ppa:ondrej/php
-        ```
-        
-        ```
-        sudo apt update
-        ```
-        
-        ```
-        sudo apt install -y php
-        ```
-        
-        ```
-        sudo apt install php-xml php-curl  php-gd php-sqlite3 php-mbstring php-pgsql php-mysql
-        ```
-    * Instale o `Composer`, com os comandos abaixo:
-        ```
-        sudo apt update
-        ```
+## What it does
 
-        ```
-        sudo apt install php-cli unzip
-        ```
+- `POST /api/videos` (also `POST /videos` with a CSRF token) accepts a `multipart/form-data` field named `video`.
+- Validation (in `FFMpegService`): file required, MIME type `video/mp4`, `video/quicktime` or `video/x-msvideo`, maximum 100 MB.
+- Metadata extracted with FFprobe (`php-ffmpeg`): original file name, resolution (`WIDTHxHEIGHT`) and duration (`HH:MM:SS`).
+- A `videos` row is created (`uuid`, `name`, `resolution`, `duration`, `url`) inside a database transaction.
+- The file is uploaded with the AWS SDK to `videos/{uuid}/{original-name}_{timestamp}.{ext}` (MinIO in local development), and the public URL is saved in `url`.
+- When `url` is set, `VideoObserver` dispatches `PublishMessageJob` to the queue, which publishes the video record as JSON on the Redis channel `videos.store`.
+- `php artisan redis:subscribe {channel}` prints the messages received on a channel.
+- A minimal upload page (`GET /videos/create`, also the target of `/`) posts the form via AJAX and shows the response message.
+- AJAX requests get a JSON response `{ success, status, message }`; regular form posts redirect back with the same data in the session.
+- Storage and metadata extraction sit behind interfaces (`VideoManagerServiceInterface`, `VideoStorageServiceInterface`) bound in `AppServiceProvider`.
 
-        ```
-        cd ~
-        ```
+## Tech stack
 
-        ```
-        curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
-        ```
+- PHP `^8.2` (the Docker image runs PHP 8.4 on Ubuntu 24.04 with `ffmpeg` installed)
+- Laravel Framework 12 (locked at v12.17.0), Laravel Sanctum 4 (installed, not used by the routes)
+- `aws/aws-sdk-php` 3.344, `php-ffmpeg/php-ffmpeg` 1.3, `predis/predis` 2 (`.env.example` uses the `phpredis` client)
+- MySQL 8.0, Redis, MinIO (via Laravel Sail 1.43 and `docker-compose.yml`)
+- PHPUnit 11
+- jQuery (served from `public/js`) on the upload page
 
-        ```
-        HASH=`curl -sS https://composer.github.io/installer.sig`
-        ```
+## Running locally
 
-        ```
-        php -r "if (hash_file('SHA384', '/tmp/composer-setup.php') === '$HASH') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
-        ```
+Requirements: Docker with Compose, PHP 8.2+ and Composer on the host (to install `vendor/`, which the compose file uses), and `make`.
 
-        ```
-        sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
-        ```
-    *   Instale o `Docker Compose`, conforme a documentação que se encontra em https://docs.docker.com/engine/install/ubuntu/;
-    *   Instale o `Make` com o comando abaixo:
-        ```
-        sudo apt-get -y install make
-        ```
-    *   Dentro do diretório onde o repositório foi clonado, instale as dependências com o comando abaixo:
-        ```
-        composer install
-        ```
-        * Crie o arquivo de variáveis de ambiente, com o comando abaixo:
-            ```
-            cp .env.example .env
-            ```
-        * Gere a key do projeto, com o comando abaixo:
-            ```
-            php artisan key:generate
-            ```
-        *   Execute esse comando:
-            ```
-            ./setup.sh 
-            ```
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+./setup.sh          # chown of the project files to $USER:www-data (uses sudo)
+make up             # ./vendor/bin/sail up
+```
 
-        
-3.  **Inicialização**
-    *   Para iniciar o projeto, execute o comando abaixo:
-        ```
-        make up
-        ```
-        *   Com o projeto iniciado, para rodar as `migrations`, execute esses comandos:
-            ```
-            make sh
-            ```
+In another terminal:
 
-            ```
-            php artisan migrate
-            ```
-        * Para execuar o `testes` unitário e/ou de integração, execute esses comandos:
-             ```
-            make sh
-            ```
+```bash
+make sh             # shell inside the "application" container
+php artisan migrate
+```
 
-            ```
-            php artisan test
-            ```
-        * Para se inscrever e disparar no canal de `mensagens`, excute esses grupos de comandos em janelas diferentes:
-            * Queue Job
-                ```
-                make sh
-                ```
+Before the first upload, create a bucket named `4yousee` in the MinIO console (http://localhost:8900, user `sail`, password from `.env`); nothing in the repository creates it.
 
-                ```
-                php artisan queue:work
-                ```
-            
-            * Redis Subscribe
-                ```
-                make sh
-                ```
-                
-                ```
-                php artisan redis:subscribe videos.store
-                ```
-    * O projeto pode ser usado tanto via interface web (http://localhost), quanto por API (http://localhost/api)
+The upload page is at http://localhost and the API at http://localhost/api/videos:
+
+```bash
+curl -H "X-Requested-With: XMLHttpRequest" -F "video=@public/examples/example.mp4" http://localhost/api/videos
+```
+
+To see the queue message, run each command in its own `make sh` session:
+
+```bash
+php artisan queue:work
+php artisan redis:subscribe videos.store
+```
+
+## Tests
+
+Inside the container (`make sh`):
+
+```bash
+php artisan test
+```
+
+The feature tests (`tests/Feature`) cover upload validation (missing file, non-video file, file over 100 MB), name/duration/resolution extraction, the S3 upload and the `POST /api/videos` route. They use SQLite in memory and the sync queue, but call the real FFprobe binary and the MinIO endpoint, so they need the Sail stack running and the bucket created. `public/examples/example.mp4` is the fixture.
+
+## Project structure
+
+```
+app/Http/Controllers/VideoController.php    upload form and store action
+app/Services/FFMpegService.php              validation and metadata extraction
+app/Services/S3Service.php                  upload to S3/MinIO
+app/Services/Contracts/                     service interfaces
+app/Observers/VideoObserver.php             dispatches the job when the URL is saved
+app/Jobs/PublishMessageJob.php              Redis publish on "videos.store"
+app/Console/Commands/RedisSubscribe.php     redis:subscribe command
+docker/                                     Sail runtime (Dockerfile with ffmpeg, php.ini with 200M upload limit)
+Makefile                                    up/down/start/stop/sh shortcuts
+```
+
+## Notes
+
+- `uuid` is filled with PHP `uniqid()`, not an RFC 4122 UUID.
+- Validation lives in the service and raises generic exceptions; failures return HTTP 406 with the exception message, not Laravel's 422 validation format.
+- The size limit is computed as `bytes / 1024 / 1000`, a mix of binary and decimal units.
+- Duration is converted with `Carbon::createFromFormat('s', ...)`, which appears to reject videos of 100 seconds or longer (PHP's `s` format reads two digits).
+- Objects are uploaded with `ACL: public-read`.
+- `S3Service` reads `env()` directly instead of `config()`, which stops working once the configuration is cached.
+- The API route has no authentication even though Sanctum is installed.
+- Tests depend on external services (MinIO, FFprobe) rather than fakes.
