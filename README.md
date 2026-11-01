@@ -4,7 +4,7 @@ A Laravel 12 application that receives a video upload, extracts its metadata wit
 
 ## Context
 
-Solution to the hiring challenge of 4YouSee (2025). The statement given by the company is kept in [`challenge.md`](challenge.md) (in Portuguese).
+Solution to the hiring challenge of 4YouSee (2025). The statement given by the company is kept in [`docs/challenge.md`](docs/challenge.md) (in Portuguese).
 
 ## What it does
 
